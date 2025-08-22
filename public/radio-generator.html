@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de JSON - Rádios</title>
+    <meta name="description" content="Ferramenta profissional para criar JSON de estações de rádio">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --flamengo-red: #e30613;
+            --flamengo-black: #000000;
+            --flamengo-red-dark: #b8050f;
+            --flamengo-red-light: #ff1a2b;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--flamengo-red) 0%, var(--flamengo-red-dark) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            margin: 2rem auto;
+            max-width: 1200px;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, var(--flamengo-black) 0%, var(--flamengo-red-dark) 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+        }
+        
+        .form-section {
+            padding: 2rem;
+        }
+        
+        .btn-flamengo {
+            background: linear-gradient(135deg, var(--flamengo-red) 0%, var(--flamengo-red-dark) 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 12px 30px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(227, 6, 19, 0.3);
+        }
+        
+        .btn-flamengo:hover {
+            background: linear-gradient(135deg, var(--flamengo-red-light) 0%, var(--flamengo-red) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(227, 6, 19, 0.4);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: var(--flamengo-black);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 12px 30px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: #333;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--flamengo-red);
+            box-shadow: 0 0 0 0.25rem rgba(227, 6, 19, 0.25);
+        }
+        
+        .json-output {
+            background: var(--flamengo-black);
+            color: #00ff00;
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .radio-list {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .radio-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .radio-item:hover {
+            border-color: var(--flamengo-red);
+            box-shadow: 0 2px 10px rgba(227, 6, 19, 0.1);
+        }
+        
+        .icon-preview {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 1rem;
+                border-radius: 15px;
+            }
+            
+            .header-section {
+                padding: 1.5rem 1rem;
+                border-radius: 15px 15px 0 0;
+            }
+            
+            .form-section {
+                padding: 1.5rem 1rem;
+            }
+            
+            .btn-flamengo, .btn-secondary {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <!-- Header -->
+            <div class="header-section">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="bi bi-broadcast"></i> Gerador de JSON - Rádios
+                </h1>
+                <p class="lead mb-0">Ferramenta profissional para criar e gerenciar dados de estações de rádio</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="form-section">
+                <div class="row">
+                    <!-- Form Section -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Adicionar Nova Rádio</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="radioForm">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-semibold">ID da Rádio</label>
+                                            <input type="text" class="form-control" id="radioId" placeholder="Ex: fm_93" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-semibold">Nome da Rádio</label>
+                                            <input type="text" class="form-control" id="radioName" placeholder="Ex: Rádio 93 FM" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-semibold">Tipo</label>
+                                            <select class="form-select" id="radioType" required>
+                                                <option value="radio">Rádio</option>
+                                                <option value="podcast">Podcast</option>
+                                                <option value="stream">Stream</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-semibold">Frequência</label>
+                                            <input type="text" class="form-control" id="radioFrequency" placeholder="Ex: 93 FM">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">URL do Stream</label>
+                                        <input type="url" class="form-control" id="radioUrl" placeholder="https://..." required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">URL do Ícone</label>
+                                        <input type="url" class="form-control" id="radioIcon" placeholder="https://..." onchange="previewIcon()">
+                                        <div class="mt-2" id="iconPreview"></div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-semibold">Cidade</label>
+                                            <input type="text" class="form-control" id="radioCity" placeholder="Ex: Fortaleza" required>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label fw-semibold">Estado</label>
+                                            <select class="form-select" id="radioState" onchange="updateCategory()" required>
+                                                <option value="">Selecione</option>
+                                                <option value="AC">AC</option>
+                                                <option value="AL">AL</option>
+                                                <option value="AP">AP</option>
+                                                <option value="AM">AM</option>
+                                                <option value="BA">BA</option>
+                                                <option value="CE">CE</option>
+                                                <option value="DF">DF</option>
+                                                <option value="ES">ES</option>
+                                                <option value="GO">GO</option>
+                                                <option value="MA">MA</option>
+                                                <option value="MT">MT</option>
+                                                <option value="MS">MS</option>
+                                                <option value="MG">MG</option>
+                                                <option value="PA">PA</option>
+                                                <option value="PB">PB</option>
+                                                <option value="PR">PR</option>
+                                                <option value="PE">PE</option>
+                                                <option value="PI">PI</option>
+                                                <option value="RJ">RJ</option>
+                                                <option value="RN">RN</option>
+                                                <option value="RS">RS</option>
+                                                <option value="RO">RO</option>
+                                                <option value="RR">RR</option>
+                                                <option value="SC">SC</option>
+                                                <option value="SP">SP</option>
+                                                <option value="SE">SE</option>
+                                                <option value="TO">TO</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label fw-semibold">Primeira Letra</label>
+                                            <input type="text" class="form-control" id="radioLetter" maxlength="1" placeholder="R" style="text-transform: uppercase;">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button type="button" class="btn btn-secondary me-md-2" onclick="clearForm()">
+                                            <i class="bi bi-arrow-clockwise"></i> Limpar
+                                        </button>
+                                        <button type="submit" class="btn btn-flamengo">
+                                            <i class="bi bi-plus-lg"></i> Adicionar Rádio
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Radio List -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Rádios Adicionadas (<span id="radioCount">0</span>)</h5>
+                                <div>
+                                    <button class="btn btn-sm btn-secondary me-2" onclick="clearAllRadios()">
+                                        <i class="bi bi-trash"></i> Limpar Tudo
+                                    </button>
+                                    <button class="btn btn-sm btn-flamengo" onclick="exportJSON()">
+                                        <i class="bi bi-download"></i> Exportar JSON
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="radio-list" id="radioList">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="bi bi-broadcast fs-1"></i>
+                                        <p class="mt-2">Nenhuma rádio adicionada ainda</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- JSON Output -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-code-square"></i> JSON Gerado</h5>
+                                <button class="btn btn-sm btn-flamengo" onclick="copyJSON()">
+                                    <i class="bi bi-clipboard"></i> Copiar JSON
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <pre class="json-output" id="jsonOutput">[]</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let radioData = [];
+        
+        // Initialize
+        document.getElementById('radioForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            addRadio();
+        });
+        
+        // Auto-generate letter from name
+        document.getElementById('radioName').addEventListener('input', function() {
+            const name = this.value;
+            const firstLetter = name.charAt(0).toUpperCase();
+            document.getElementById('radioLetter').value = firstLetter;
+        });
+        
+        function updateCategory() {
+            const state = document.getElementById('radioState').value;
+            if (state) {
+                document.getElementById('radioCategory').value = state.toLowerCase();
+            }
+        }
+        
+        function previewIcon() {
+            const iconUrl = document.getElementById('radioIcon').value;
+            const previewDiv = document.getElementById('iconPreview');
+            
+            if (iconUrl) {
+                previewDiv.innerHTML = `<img src="${iconUrl}" class="icon-preview" alt="Preview" onerror="this.style.display='none'">`;
+            } else {
+                previewDiv.innerHTML = '';
+            }
+        }
+        
+        function addRadio() {
+            const id = document.getElementById('radioId').value;
+            const name = document.getElementById('radioName').value;
+            const type = document.getElementById('radioType').value;
+            const url = document.getElementById('radioUrl').value;
+            const icon = document.getElementById('radioIcon').value;
+            const city = document.getElementById('radioCity').value;
+            const state = document.getElementById('radioState').value;
+            const frequency = document.getElementById('radioFrequency').value;
+            const letter = document.getElementById('radioLetter').value.toUpperCase();
+            
+            // Check if ID already exists
+            if (radioData.find(radio => radio.id === id)) {
+                alert('Uma rádio com este ID já existe!');
+                return;
+            }
+            
+            const newRadio = {
+                id: id,
+                name: name,
+                type: type,
+                url: url,
+                icon: icon,
+                city: city,
+                state: state,
+                category: state.toLowerCase(),
+                frequency: frequency,
+                letter: letter
+            };
+            
+            radioData.push(newRadio);
+            updateDisplay();
+            clearForm();
+            
+            // Show success message
+            showToast('Rádio adicionada com sucesso!', 'success');
+        }
+        
+        function removeRadio(index) {
+            radioData.splice(index, 1);
+            updateDisplay();
+            showToast('Rádio removida!', 'warning');
+        }
+        
+        function editRadio(index) {
+            const radio = radioData[index];
+            
+            document.getElementById('radioId').value = radio.id;
+            document.getElementById('radioName').value = radio.name;
+            document.getElementById('radioType').value = radio.type;
+            document.getElementById('radioUrl').value = radio.url;
+            document.getElementById('radioIcon').value = radio.icon;
+            document.getElementById('radioCity').value = radio.city;
+            document.getElementById('radioState').value = radio.state;
+            document.getElementById('radioFrequency').value = radio.frequency;
+            document.getElementById('radioLetter').value = radio.letter;
+            
+            previewIcon();
+            
+            // Remove from array (will be re-added when form is submitted)
+            radioData.splice(index, 1);
+            updateDisplay();
+            
+            // Scroll to form
+            document.getElementById('radioForm').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function clearForm() {
+            document.getElementById('radioForm').reset();
+            document.getElementById('iconPreview').innerHTML = '';
+        }
+        
+        function clearAllRadios() {
+            if (confirm('Tem certeza que deseja remover todas as rádios?')) {
+                radioData = [];
+                updateDisplay();
+                showToast('Todas as rádios foram removidas!', 'warning');
+            }
+        }
+        
+        function updateDisplay() {
+            updateRadioList();
+            updateJSONOutput();
+            updateCounter();
+        }
+        
+        function updateRadioList() {
+            const listContainer = document.getElementById('radioList');
+            
+            if (radioData.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-broadcast fs-1"></i>
+                        <p class="mt-2">Nenhuma rádio adicionada ainda</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            listContainer.innerHTML = radioData.map((radio, index) => `
+                <div class="radio-item">
+                    <div class="d-flex align-items-center">
+                        <img src="${radio.icon}" class="icon-preview me-3" alt="${radio.name}" onerror="this.style.display='none'">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">${radio.name}</h6>
+                            <small class="text-muted">
+                                ${radio.city}, ${radio.state} • ${radio.frequency || 'N/A'}
+                            </small>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="editRadio(${index})" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeRadio(${index})" title="Remover">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function updateJSONOutput() {
+            const jsonOutput = document.getElementById('jsonOutput');
+            jsonOutput.textContent = JSON.stringify(radioData, null, 2);
+        }
+        
+        function updateCounter() {
+            document.getElementById('radioCount').textContent = radioData.length;
+        }
+        
+        function copyJSON() {
+            const jsonText = JSON.stringify(radioData, null, 2);
+            navigator.clipboard.writeText(jsonText).then(() => {
+                showToast('JSON copiado para a área de transferência!', 'success');
+            });
+        }
+        
+        function exportJSON() {
+            const jsonText = JSON.stringify(radioData, null, 2);
+            const blob = new Blob([jsonText], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'radios.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('JSON exportado com sucesso!', 'success');
+        }
+        
+        function showToast(message, type = 'info') {
+            // Create toast container if it doesn't exist
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                toastContainer.style.zIndex = '11';
+                document.body.appendChild(toastContainer);
+            }
+            
+            const toastId = 'toast_' + Date.now();
+            const bgColor = type === 'success' ? 'bg-success' : type === 'warning' ? 'bg-warning' : 'bg-info';
+            
+            const toastHTML = `
+                <div id="${toastId}" class="toast align-items-center text-white ${bgColor} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+            
+            // Remove toast element after it's hidden
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
+        }
+        
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>
