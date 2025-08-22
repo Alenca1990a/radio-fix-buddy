@@ -130,6 +130,58 @@
             object-fit: cover;
             border-radius: 8px;
             border: 2px solid #dee2e6;
+            transition: transform 0.2s ease;
+        }
+        
+        .icon-preview:hover {
+            transform: scale(1.1);
+        }
+        
+        .radio-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.3s ease;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .btn-flamengo, .btn-secondary {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-flamengo:before, .btn-secondary:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-flamengo:hover:before, .btn-secondary:hover:before {
+            left: 100%;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--flamengo-red);
+            box-shadow: 0 0 0 0.25rem rgba(227, 6, 19, 0.25);
+            transform: translateY(-1px);
         }
         
         @media (max-width: 768px) {
@@ -176,10 +228,11 @@
                             </div>
                             <div class="card-body">
                                 <form id="radioForm">
-                                    <div class="row">
+                                     <div class="row">
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label fw-semibold">ID da Rádio</label>
-                                            <input type="text" class="form-control" id="radioId" placeholder="Ex: fm_93" required>
+                                            <label class="form-label fw-semibold">ID da Rádio <small class="text-muted">(apenas minúsculas)</small></label>
+                                            <input type="text" class="form-control" id="radioId" placeholder="Ex: fm_93" required style="text-transform: lowercase;">
+                                            <div class="form-text">O ID deve conter apenas letras minúsculas, números e underscore</div>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label fw-semibold">Nome da Rádio</label>
@@ -190,11 +243,8 @@
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label fw-semibold">Tipo</label>
-                                            <select class="form-select" id="radioType" required>
-                                                <option value="radio">Rádio</option>
-                                                <option value="podcast">Podcast</option>
-                                                <option value="stream">Stream</option>
-                                            </select>
+                                            <input type="text" class="form-control" id="radioType" value="radio" readonly style="background-color: #f8f9fa;">
+                                            <div class="form-text">Padrão: "radio" (minúscula)</div>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label fw-semibold">Frequência</label>
@@ -218,40 +268,45 @@
                                             <label class="form-label fw-semibold">Cidade</label>
                                             <input type="text" class="form-control" id="radioCity" placeholder="Ex: Fortaleza" required>
                                         </div>
-                                        <div class="col-md-3 mb-3">
+                                        <div class="col-md-4 mb-3">
                                             <label class="form-label fw-semibold">Estado</label>
                                             <select class="form-select" id="radioState" onchange="updateCategory()" required>
                                                 <option value="">Selecione</option>
-                                                <option value="AC">AC</option>
-                                                <option value="AL">AL</option>
-                                                <option value="AP">AP</option>
-                                                <option value="AM">AM</option>
-                                                <option value="BA">BA</option>
-                                                <option value="CE">CE</option>
-                                                <option value="DF">DF</option>
-                                                <option value="ES">ES</option>
-                                                <option value="GO">GO</option>
-                                                <option value="MA">MA</option>
-                                                <option value="MT">MT</option>
-                                                <option value="MS">MS</option>
-                                                <option value="MG">MG</option>
-                                                <option value="PA">PA</option>
-                                                <option value="PB">PB</option>
-                                                <option value="PR">PR</option>
-                                                <option value="PE">PE</option>
-                                                <option value="PI">PI</option>
-                                                <option value="RJ">RJ</option>
-                                                <option value="RN">RN</option>
-                                                <option value="RS">RS</option>
-                                                <option value="RO">RO</option>
-                                                <option value="RR">RR</option>
-                                                <option value="SC">SC</option>
-                                                <option value="SP">SP</option>
-                                                <option value="SE">SE</option>
-                                                <option value="TO">TO</option>
+                                                <option value="AC">Acre (AC)</option>
+                                                <option value="AL">Alagoas (AL)</option>
+                                                <option value="AP">Amapá (AP)</option>
+                                                <option value="AM">Amazonas (AM)</option>
+                                                <option value="BA">Bahia (BA)</option>
+                                                <option value="CE">Ceará (CE)</option>
+                                                <option value="DF">Distrito Federal (DF)</option>
+                                                <option value="ES">Espírito Santo (ES)</option>
+                                                <option value="GO">Goiás (GO)</option>
+                                                <option value="MA">Maranhão (MA)</option>
+                                                <option value="MT">Mato Grosso (MT)</option>
+                                                <option value="MS">Mato Grosso do Sul (MS)</option>
+                                                <option value="MG">Minas Gerais (MG)</option>
+                                                <option value="PA">Pará (PA)</option>
+                                                <option value="PB">Paraíba (PB)</option>
+                                                <option value="PR">Paraná (PR)</option>
+                                                <option value="PE">Pernambuco (PE)</option>
+                                                <option value="PI">Piauí (PI)</option>
+                                                <option value="RJ">Rio de Janeiro (RJ)</option>
+                                                <option value="RN">Rio Grande do Norte (RN)</option>
+                                                <option value="RS">Rio Grande do Sul (RS)</option>
+                                                <option value="RO">Rondônia (RO)</option>
+                                                <option value="RR">Roraima (RR)</option>
+                                                <option value="SC">Santa Catarina (SC)</option>
+                                                <option value="SP">São Paulo (SP)</option>
+                                                <option value="SE">Sergipe (SE)</option>
+                                                <option value="TO">Tocantins (TO)</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-3 mb-3">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">Categoria <small class="text-muted">(auto)</small></label>
+                                            <input type="text" class="form-control" id="radioCategory" readonly style="background-color: #f8f9fa; text-transform: lowercase;">
+                                            <div class="form-text">Gerado automaticamente do estado (minúscula)</div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
                                             <label class="form-label fw-semibold">Primeira Letra</label>
                                             <input type="text" class="form-control" id="radioLetter" maxlength="1" placeholder="R" style="text-transform: uppercase;">
                                         </div>
@@ -335,10 +390,21 @@
             document.getElementById('radioLetter').value = firstLetter;
         });
         
+        // Validate lowercase ID
+        document.getElementById('radioId').addEventListener('input', function() {
+            let value = this.value.toLowerCase();
+            // Remove invalid characters
+            value = value.replace(/[^a-z0-9_]/g, '');
+            this.value = value;
+        });
+        
         function updateCategory() {
             const state = document.getElementById('radioState').value;
+            const categoryField = document.getElementById('radioCategory');
             if (state) {
-                document.getElementById('radioCategory').value = state.toLowerCase();
+                categoryField.value = state.toLowerCase();
+            } else {
+                categoryField.value = '';
             }
         }
         
@@ -354,19 +420,32 @@
         }
         
         function addRadio() {
-            const id = document.getElementById('radioId').value;
+            const id = document.getElementById('radioId').value.toLowerCase();
             const name = document.getElementById('radioName').value;
-            const type = document.getElementById('radioType').value;
+            const type = "radio"; // Always lowercase
             const url = document.getElementById('radioUrl').value;
             const icon = document.getElementById('radioIcon').value;
             const city = document.getElementById('radioCity').value;
             const state = document.getElementById('radioState').value;
-            const frequency = document.getElementById('radioFrequency').value;
-            const letter = document.getElementById('radioLetter').value.toUpperCase();
+            const category = state.toLowerCase();
+            const frequency = document.getElementById('radioFrequency').value || " ";
+            const letter = document.getElementById('radioLetter').value.toUpperCase() || " ";
+            
+            // Validate required fields
+            if (!id || !name || !url || !city || !state) {
+                showToast('Por favor, preencha todos os campos obrigatórios!', 'error');
+                return;
+            }
+            
+            // Validate ID format
+            if (!/^[a-z0-9_]+$/.test(id)) {
+                showToast('ID deve conter apenas letras minúsculas, números e underscore!', 'error');
+                return;
+            }
             
             // Check if ID already exists
             if (radioData.find(radio => radio.id === id)) {
-                alert('Uma rádio com este ID já existe!');
+                showToast('Uma rádio com este ID já existe!', 'error');
                 return;
             }
             
@@ -378,7 +457,7 @@
                 icon: icon,
                 city: city,
                 state: state,
-                category: state.toLowerCase(),
+                category: category,
                 frequency: frequency,
                 letter: letter
             };
@@ -386,8 +465,6 @@
             radioData.push(newRadio);
             updateDisplay();
             clearForm();
-            
-            // Show success message
             showToast('Rádio adicionada com sucesso!', 'success');
         }
         
@@ -407,22 +484,37 @@
             document.getElementById('radioIcon').value = radio.icon;
             document.getElementById('radioCity').value = radio.city;
             document.getElementById('radioState').value = radio.state;
-            document.getElementById('radioFrequency').value = radio.frequency;
-            document.getElementById('radioLetter').value = radio.letter;
+            document.getElementById('radioCategory').value = radio.category;
+            document.getElementById('radioFrequency').value = radio.frequency === " " ? "" : radio.frequency;
+            document.getElementById('radioLetter').value = radio.letter === " " ? "" : radio.letter;
             
             previewIcon();
+            updateCategory(); // Update category field
             
             // Remove from array (will be re-added when form is submitted)
             radioData.splice(index, 1);
             updateDisplay();
             
-            // Scroll to form
-            document.getElementById('radioForm').scrollIntoView({ behavior: 'smooth' });
+            // Scroll to form with smooth animation
+            document.getElementById('radioForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Highlight the form briefly
+            const formCard = document.querySelector('#radioForm').closest('.card');
+            formCard.style.borderColor = 'var(--flamengo-red)';
+            formCard.style.boxShadow = '0 0 20px rgba(227, 6, 19, 0.3)';
+            setTimeout(() => {
+                formCard.style.borderColor = '';
+                formCard.style.boxShadow = '';
+            }, 2000);
+            
+            showToast('Rádio carregada para edição!', 'info');
         }
         
         function clearForm() {
             document.getElementById('radioForm').reset();
             document.getElementById('iconPreview').innerHTML = '';
+            document.getElementById('radioType').value = 'radio'; // Reset to default
+            document.getElementById('radioCategory').value = ''; // Clear category
         }
         
         function clearAllRadios() {
@@ -492,18 +584,84 @@
         }
         
         function exportJSON() {
+            if (radioData.length === 0) {
+                showToast('Adicione pelo menos uma rádio antes de exportar!', 'warning');
+                return;
+            }
+            
+            // Show modal for file naming
+            showFileNameModal();
+        }
+        
+        function showFileNameModal() {
+            // Create modal for file naming
+            const modalId = 'fileNameModal';
+            const modalHTML = `
+                <div class="modal fade" id="${modalId}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header" style="background: linear-gradient(135deg, var(--flamengo-red), var(--flamengo-red-dark)); color: white;">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-download"></i> Exportar JSON
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="fileName" class="form-label fw-semibold">Nome do arquivo:</label>
+                                    <input type="text" class="form-control" id="fileName" value="radios.json" style="border-radius: 8px;">
+                                    <div class="form-text">O arquivo será baixado com este nome</div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>${radioData.length}</strong> rádios serão exportadas no arquivo JSON.
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="button" class="btn btn-flamengo" onclick="downloadJSON()">
+                                    <i class="bi bi-download"></i> Baixar JSON
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById(modalId);
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            const modal = new bootstrap.Modal(document.getElementById(modalId));
+            modal.show();
+            
+            // Focus on filename input
+            document.getElementById('fileName').focus();
+            document.getElementById('fileName').select();
+        }
+        
+        function downloadJSON() {
+            const fileName = document.getElementById('fileName').value || 'radios.json';
             const jsonText = JSON.stringify(radioData, null, 2);
             const blob = new Blob([jsonText], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'radios.json';
+            a.download = fileName.endsWith('.json') ? fileName : fileName + '.json';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            showToast('JSON exportado com sucesso!', 'success');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('fileNameModal'));
+            modal.hide();
+            
+            showToast(`Arquivo "${a.download}" baixado com sucesso!`, 'success');
         }
         
         function showToast(message, type = 'info') {
