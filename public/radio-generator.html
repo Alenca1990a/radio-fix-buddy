@@ -544,7 +544,16 @@
                 return;
             }
             
-            listContainer.innerHTML = radioData.map((radio, index) => `
+            // Sort radios alphabetically by letter
+            const sortedRadios = [...radioData].sort((a, b) => {
+                const letterA = (a.letter || '').toUpperCase();
+                const letterB = (b.letter || '').toUpperCase();
+                return letterA.localeCompare(letterB);
+            });
+            
+            listContainer.innerHTML = sortedRadios.map((radio) => {
+                const originalIndex = radioData.findIndex(r => r.id === radio.id);
+                return `
                 <div class="radio-item">
                     <div class="d-flex align-items-center">
                         <img src="${radio.icon}" class="icon-preview me-3" alt="${radio.name}" onerror="this.style.display='none'">
@@ -555,10 +564,10 @@
                             </small>
                         </div>
                         <div class="btn-group">
-                            <button class="btn btn-sm btn-outline-secondary" onclick="editRadio(${index})" title="Editar">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="editRadio(${originalIndex})" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="removeRadio(${index})" title="Remover">
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeRadio(${originalIndex})" title="Remover">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
