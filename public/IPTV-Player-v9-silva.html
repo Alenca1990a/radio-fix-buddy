@@ -3215,118 +3215,16 @@
           return;
         }
 
-        // Organizar rádios alfabeticamente por letra e depois por cidade
+        // Organizar rádios alfabeticamente por nome
         const sortedRadios = filteredRadios.sort((a, b) => {
-          // Primeiro ordenar por letra
-          const letterA = (a.letter || '').toUpperCase();
-          const letterB = (b.letter || '').toUpperCase();
-          const letterComparison = letterA.localeCompare(letterB);
-          
-          if (letterComparison !== 0) {
-            return letterComparison;
-          }
-          
-          // Se as letras são iguais, ordenar por cidade
-          const cityA = (a.city || '').toLowerCase();
-          const cityB = (b.city || '').toLowerCase();
-          return cityA.localeCompare(cityB);
-        });
-
-        // Agrupar por cidade dentro de cada categoria/estado
-        const radiosByCity = {};
-        sortedRadios.forEach(radio => {
-          const cityKey = radio.city || 'Outras';
-          if (!radiosByCity[cityKey]) {
-            radiosByCity[cityKey] = [];
-          }
-          radiosByCity[cityKey].push(radio);
+          return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
         });
 
         radioList.innerHTML = '';
-        
-        // Se estiver mostrando todas as categorias, agrupar por estado e cidade
-        if (this.activeRadioCategory === 'all') {
-          const radiosByState = {};
-          sortedRadios.forEach(radio => {
-            const stateKey = radio.state || 'Nacional';
-            if (!radiosByState[stateKey]) {
-              radiosByState[stateKey] = {};
-            }
-            const cityKey = radio.city || 'Outras';
-            if (!radiosByState[stateKey][cityKey]) {
-              radiosByState[stateKey][cityKey] = [];
-            }
-            radiosByState[stateKey][cityKey].push(radio);
-          });
-
-          // Renderizar por estado e cidade
-          Object.keys(radiosByState).sort().forEach(state => {
-            // Adicionar cabeçalho do estado
-            const stateHeader = document.createElement('div');
-            stateHeader.className = 'state-header';
-            stateHeader.style.cssText = `
-              background: var(--primary-gradient);
-              color: white;
-              padding: 0.75rem 1rem;
-              font-weight: 700;
-              font-size: 1.1rem;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-              margin: 0.5rem 0;
-              border-radius: 8px;
-            `;
-            stateHeader.innerHTML = `<i class="fas fa-map-marker-alt me-2"></i>${state}`;
-            radioList.appendChild(stateHeader);
-
-            // Renderizar cidades dentro do estado
-            Object.keys(radiosByState[state]).sort().forEach(city => {
-              // Adicionar subcabeçalho da cidade
-              const cityHeader = document.createElement('div');
-              cityHeader.className = 'city-header';
-              cityHeader.style.cssText = `
-                background: var(--bg-quaternary);
-                color: var(--text-tertiary);
-                padding: 0.5rem 1rem;
-                font-weight: 600;
-                font-size: 0.9rem;
-                margin: 0.25rem 0;
-                border-left: 3px solid var(--primary-color);
-              `;
-              cityHeader.innerHTML = `<i class="fas fa-city me-2"></i>${city}`;
-              radioList.appendChild(cityHeader);
-
-              // Renderizar rádios da cidade
-              radiosByState[state][city].forEach(radio => {
-                const item = this.createContentItem(radio, 'radio');
-                radioList.appendChild(item);
-              });
-            });
-          });
-        } else {
-          // Se estiver filtrado por estado específico, mostrar apenas por cidade
-          Object.keys(radiosByCity).sort().forEach(city => {
-            // Adicionar cabeçalho da cidade
-            const cityHeader = document.createElement('div');
-            cityHeader.className = 'city-header';
-            cityHeader.style.cssText = `
-              background: var(--bg-quaternary);
-              color: var(--text-tertiary);
-              padding: 0.5rem 1rem;
-              font-weight: 600;
-              font-size: 0.9rem;
-              margin: 0.25rem 0;
-              border-left: 3px solid var(--primary-color);
-            `;
-            cityHeader.innerHTML = `<i class="fas fa-city me-2"></i>${city}`;
-            radioList.appendChild(cityHeader);
-
-            // Renderizar rádios da cidade
-            radiosByCity[city].forEach(radio => {
-              const item = this.createContentItem(radio, 'radio');
-              radioList.appendChild(item);
-            });
-          });
-        }
+        sortedRadios.forEach(radio => {
+          const item = this.createContentItem(radio, 'radio');
+          radioList.appendChild(item);
+        });
       }
 
       createContentItem(content, type) {
