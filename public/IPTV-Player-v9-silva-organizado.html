@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPTV Player v9 - Rádios Organizadas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.0/css/all.min.css" rel="stylesheet">
+  <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    :root {
+      --primary-color: #00A848;
+      --primary-gradient: linear-gradient(135deg, #00A848, #00c851);
+      --bg-primary: #1f1f1f;
+      --bg-secondary: #252525;
+      --bg-tertiary: #303030;
+      --bg-quaternary: #404040;
+      --text-primary: #ffffff;
+      --text-secondary: #9CA3AF;
+      --text-tertiary: #D1D5DB;
+    }
+
+    /* Temas */
+    [data-theme="black"] {
+      --primary-color: #ffffff;
+      --primary-gradient: linear-gradient(135deg, #333333, #555555);
+      --bg-primary: #000000;
+      --bg-secondary: #111111; /* FUNDO PARA CANAIS,  FILMES E SERIES E RÁDIOS */
+      --bg-tertiary: #222222; /* FUNDO DA LISTA DE ITENS*/
+      --bg-quaternary: #333333;
+    }
+
+    [data-theme="claro"] {
+      --primary-color: #007bff;
+      --primary-gradient: linear-gradient(135deg, #007bff, #0056b3);
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --bg-tertiary: #e9ecef;
+      --bg-quaternary: #dee2e6;
+      --text-primary: #212529;
+      --text-secondary: #6c757d;
+      --text-tertiary: #495057;
+    }
+
+    [data-theme="azul"] {
+      --primary-color: #007bff;
+      --primary-gradient: linear-gradient(135deg, #007bff, #0056b3);
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --bg-quaternary: #30363d;
+    }
+
+    [data-theme="vermelho"] {
+      --primary-color: #dc3545;
+      --primary-gradient: linear-gradient(135deg, #dc3545, #c82333);
+      --bg-primary: #1a0d0d;
+      --bg-secondary: #2d1b1b;
+      --bg-tertiary: #3d2626;
+      --bg-quaternary: #4d3131;
+    }
+
+    [data-theme="verde"] {
+      --primary-color: #28a745;
+      --primary-gradient: linear-gradient(135deg, #28a745, #1e7e34);
+      --bg-primary: #0d1a0d;
+      --bg-secondary: #1b2d1b;
+      --bg-tertiary: #263d26;
+      --bg-quaternary: #314d31;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+    html, body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow-x: hidden;
+    }
+    
+    /* Header Styles - SEMPRE NO TOPO EM PAISAGEM */
+    .header {
+      background: var(--primary-gradient);
+      padding: 0.75rem 1rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      order: -1; /* Sempre no topo */
+    }
+    .header h1 {
+      margin: 0;
+      font-size: clamp(1.1rem, 4vw, 1.5rem);
+      font-weight: 700;
+      color: white;
+    }
+    .header-buttons {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .header-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 50%;
+      width: clamp(35px, 8vw, 40px);
+      height: clamp(35px, 8vw, 40px);
+      color: white;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(0.8rem, 3vw, 1rem);
+    }
+    .header-btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: scale(1.1);
+      color: white;
+    }
+    
+    /* Video Player Styles */
+    .video-container {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      background: #000;
+      overflow: hidden;
+    }
+    #videoPlayer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* GUIAS DE NAVEGAÇÃO PRINCIPAIS */
+    .main-nav {
+      background-color: var(--bg-secondary);
+      padding: 0.5rem 0;
+      border-bottom: 2px solid var(--bg-quaternary);
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .main-nav::-webkit-scrollbar {
+      display: none;
+    }
+    .main-nav .nav-tabs {
+      border: none;
+      justify-content: center;
+      flex-wrap: nowrap;
+      min-width: max-content;
+    }
+    .main-nav .nav-link {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 4vw, 2rem);
+      font-weight: 600;
+      font-size: clamp(0.8rem, 3vw, 1.1rem);
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+    .main-nav .nav-link:hover {
+      color: var(--text-tertiary);
+      background: rgba(255,255,255,0.1);
+    }
+    .main-nav .nav-link.active {
+      color: var(--primary-color);
+      background: rgba(220, 20, 60, 0.1);
+      border-bottom: 3px solid var(--primary-color);
+    }
+    
+    /* ESTILOS DA BARRA DE GUIAS*/
+    .tab-bar {
+      background-color: var(--bg-tertiary);
+      padding: 0.5rem 0;
+      border-bottom: 2px solid var(--bg-quaternary);
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .tab-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .tab-nav {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0 1rem;
+      min-width: max-content;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+      white-space: nowrap;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .tab-btn:hover {
+      color: var(--text-tertiary);
+      background: rgba(255,255,255,0.1);
+    }
+    .tab-btn.active {
+      color: var(--primary-color);
+      background: rgba(220, 20, 60, 0.1);
+    }
+    
+    .content-list {
+      background-color: var(--bg-tertiary);
+      max-height: 60vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #555 var(--bg-tertiary);
+    }
+    .content-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .content-list::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+    }
+    .content-list::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 3px;
+    }
+    
+    .content-item {
+      display: flex;
+      align-items: center;
+      padding: clamp(0.5rem, 2vw, 1rem);
+      border-bottom: 1px solid var(--bg-quaternary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .content-item:hover {
+      background-color: var(--bg-quaternary);
+      transform: translateX(5px);
+    }
+    .content-item.playing {
+      background: linear-gradient(90deg, rgba(220, 20, 60, 0.2), transparent);
+      border-left: 4px solid var(--primary-color);
+    }
+
+    /* Cabeçalhos de Estado e Cidade */
+    .state-header {
+      background: var(--primary-gradient);
+      color: white;
+      padding: 0.75rem 1rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0.5rem 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .city-header {
+      background: var(--bg-quaternary);
+      color: var(--text-tertiary);
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin: 0.25rem 0;
+      border-left: 3px solid var(--primary-color);
+      border-radius: 0 8px 8px 0;
+    }
+
+    /* Avatar dos itens */
+    .content-avatar {
+      width: clamp(50px, 12vw, 60px);
+      height: clamp(50px, 12vw, 60px);
+      border-radius: 0.5rem;
+      margin-right: 1rem;
+      flex-shrink: 0;
+      object-fit: cover;
+      background: var(--bg-quaternary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: var(--text-secondary);
+    }
+
+    .content-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .content-info h4 {
+      margin: 0 0 0.25rem 0;
+      font-size: clamp(0.85rem, 3vw, 1rem);
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .content-info p {
+      margin: 0;
+      font-size: clamp(0.7rem, 2.5vw, 0.85rem);
+      color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .content-section {
+      display: none;
+    }
+
+    .content-section.active {
+      display: block;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .header {
+        padding: 0.5rem 0.75rem;
+      }
+      
+      .header h1 {
+        font-size: 1.2rem;
+      }
+      
+      .content-list {
+        max-height: 50vh;
+      }
+      
+      .state-header {
+        font-size: 1rem;
+        padding: 0.6rem 0.8rem;
+      }
+      
+      .city-header {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body data-theme="verde">
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header d-flex justify-content-between align-items-center">
+      <h1><i class="fas fa-play-circle me-2"></i>IPTV Player v9 - Rádios Organizadas</h1>
+      <div class="header-buttons">
+        <button class="header-btn" onclick="app.toggleTheme()" title="Alterar Tema">
+          <i class="fas fa-palette"></i>
+        </button>
+        <button class="header-btn" onclick="app.toggleFullscreen()" title="Tela Cheia">
+          <i class="fas fa-expand"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Navigation -->
+    <nav class="main-nav">
+      <ul class="nav nav-tabs d-flex justify-content-center">
+        <li class="nav-item">
+          <a class="nav-link active" href="#" data-content="radios">
+            <i class="fas fa-radio me-2"></i>Rádios
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Video Player -->
+      <div class="video-container">
+        <div id="videoPlayer">
+          <div class="video-placeholder">
+            <i class="fas fa-radio"></i>
+            <h4>Selecione uma rádio para começar</h4>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Sections -->
+      <div class="content-wrapper">
+        <!-- Radios Section -->
+        <div id="radiosSection" class="content-section active">
+          <div class="tab-bar">
+            <div class="tab-nav" id="radioTabNav">
+              <button class="tab-btn active" data-category="all">Todas</button>
+              <button class="tab-btn" data-category="ce">Ceará</button>
+              <button class="tab-btn" data-category="ma">Maranhão</button>
+              <button class="tab-btn" data-category="pa">Pará</button>
+              <button class="tab-btn" data-category="mg">Minas Gerais</button>
+              <button class="tab-btn" data-category="sp">São Paulo</button>
+            </div>
+          </div>
+          <div class="content-list" id="radioList">
+            <div class="text-center p-4">
+              <i class="fas fa-radio fa-3x text-muted mb-3"></i>
+              <p class="mt-2 mb-0">Carregando rádios...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
+  
+  <script>
+    class IPTVApp {
+      constructor() {
+        this.radios = [];
+        this.currentRadio = null;
+        this.activeRadioCategory = 'all';
+        this.player = null;
+        this.themes = ['verde', 'black', 'claro', 'azul', 'vermelho'];
+        this.currentThemeIndex = 0;
+        
+        this.init();
+      }
+
+      async init() {
+        try {
+          await this.initRadios();
+          this.setupEventListeners();
+          this.renderRadios();
+          console.log('App inicializado com sucesso');
+        } catch (error) {
+          console.error('Erro ao inicializar app:', error);
+        }
+      }
+
+      async initRadios() {
+        // Rádios organizadas por estado - CEARÁ
+        const radiosCeara = [
+          {
+            id: "fm_93",
+            name: "Rádio 93 FM",
+            type: "radio",
+            url: "https://jvcs2dtro0.zoeweb.tv/fm93/stream/chunklist_w518906299.m3u8",
+            icon: "https://img.radios.com.br/radio/lg/radio107_1664371637.png",
+            city: "Fortaleza",
+            state: "CE",
+            category: "ce",
+            frequency: "93 FM",
+            letter: "R"
+          },
+          {
+            id: "cidade_fm",
+            name: "Rádio Cidade 99.1 FM",
+            type: "radio",
+            url: "https://streaming.livespanel.com:9910/stream",
+            icon: "https://img.radios.com.br/radio/lg/radio11435_1713540627.png",
+            city: "Fortaleza",
+            state: "CE",
+            category: "ce",
+            frequency: "99.1 FM",
+            letter: "C"
+          },
+          {
+            id: "radio_lideranca",
+            name: "Rádio Liderança FM",
+            type: "radio",
+            url: "https://webradio.amsolution.com.br/radio/8320/lideranca",
+            icon: "https://img.radios.com.br/radio/lg/radio13690_1510752146.jpg",
+            city: "Fortaleza",
+            state: "CE",
+            category: "ce",
+            frequency: "",
+            letter: "L"
+          },
+          {
+            id: "jangadeiro_ce",
+            name: "Rádio Jangadeiro 88.9 FM",
+            type: "radio",
+            url: "https://fmfortaleza.jmvstream.com/FMFortaleza_live?type=.flv",
+            icon: "https://img.radios.com.br/radio/lg/radio13520_1692020159.png",
+            city: "Fortaleza",
+            state: "CE",
+            category: "ce",
+            frequency: "88.9 FM",
+            letter: "J"
+          },
+          {
+            id: "somzoom_sat",
+            name: "Rádio SomZoom Sat",
+            type: "radio",
+            url: "http://str.7br.com.br:8060/stream",
+            icon: "https://img.radios.com.br/radio/lg/radio42319_1738566104.jpeg",
+            city: "Fortaleza",
+            state: "CE",
+            category: "ce",
+            frequency: "",
+            letter: "S"
+          },
+          {
+            id: "verdinha",
+            name: "Rádio Verdinha 92.5 FM",
+            type: "radio",
+            url: "https://5a1c76baf08c0.streamlock.net/z18-live/stream/chunklist.m3u8",
+            icon: "https://img.radios.com.br/radio/lg/radio14216_1680528339.jpg",
+            city: "Fortaleza",
+            state: "CE",
+            category: "ce",
+            frequency: "92.5 FM",
+            letter: "V"
+          }
+        ];
+
+        // Rádios organizadas por estado - MARANHÃO
+        const radiosMaranhao = [
+          {
+            id: "mirante96.1fm",
+            name: "Rádio Mirante 96.1 FM",
+            type: "radio",
+            url: "https://mirante2.jmvstream.com/stream",
+            icon: "https://img.radios.com.br/radio/lg/radio13935_1744986574.png",
+            city: "São Luís",
+            state: "MA",
+            category: "ma",
+            frequency: "96.1 FM",
+            letter: "M"
+          },
+          {
+            id: "radiobacabal93.1fm",
+            name: "Rádio Bacabal 93.1 FM",
+            type: "radio",
+            url: "http://stm7.xcast.com.br:12432/stream",
+            icon: "https://img.radios.com.br/radio/lg/radio42603_1683298791.jpg",
+            city: "Bacabal",
+            state: "MA",
+            category: "ma",
+            frequency: "93.1 FM",
+            letter: "B"
+          },
+          {
+            id: "jovempan",
+            name: "Rádio Jovem Pan 102.5 FM",
+            type: "radio",
+            url: "https://radio02.zas.media/proxy/jovempansaoluis/stream",
+            icon: "https://img.radios.com.br/radio/lg/radio16168_1674831310.jpg",
+            city: "São Luís",
+            state: "MA",
+            category: "ma",
+            frequency: "102.5 FM",
+            letter: "J"
+          },
+          {
+            id: "radiopinheiro",
+            name: "Rádio Pinheiro 103.3 FM",
+            type: "radio",
+            url: "http://stm15.betelhost.com.br:9050/stream",
+            icon: "https://img.radios.com.br/radio/lg/radio185009_1626443891.jpg",
+            city: "Pinheiro",
+            state: "MA",
+            category: "ma",
+            frequency: "103.3 FM",
+            letter: "P"
+          }
+        ];
+
+        // Rádios organizadas por estado - PARÁ
+        const radiosPara = [
+          {
+            id: "radioprincesa107.3fm",
+            name: "Rádio Princesa 107.3 FM",
+            type: "radio",
+            url: "https://5a57bda70564a.streamlock.net/princehd/princehd.stream/chunklist_w1645545640.m3u8",
+            icon: "https://img.radios.com.br/radio/lg/radio14348_1728928715.jpg",
+            city: "Capanema",
+            state: "PA",
+            category: "pa",
+            frequency: "107.3 FM",
+            letter: "R"
+          },
+          {
+            id: "radio_99fm",
+            name: "Rádio 99 FM",
+            type: "radio",
+            url: "http://hts02.kshost.com.br:8862/live",
+            icon: "https://img.radios.com.br/radio/lg/radio8901_1713424756.jpeg",
+            city: "Belém",
+            state: "PA",
+            category: "pa",
+            frequency: "99 FM",
+            letter: "R"
+          }
+        ];
+
+        // Rádios organizadas por estado - SÃO PAULO
+        const radiosSaoPaulo = [
+          {
+            id: "radio_89fm",
+            name: "Rádio 89 FM Rádio Rock",
+            type: "radio",
+            url: "https://26523.live.streamtheworld.com:443/RADIO_89FM_ADP.aac",
+            icon: "https://img.radios.com.br/radio/lg/radio31289_1439401796.jpg",
+            city: "São Paulo",
+            state: "SP",
+            category: "sp",
+            frequency: "89 FM",
+            letter: "R"
+          }
+        ];
+
+        // Rádios organizadas por estado - MINAS GERAIS
+        const radiosMinasGerais = [
+          {
+            id: "alvoradafm94.9",
+            name: "Alvorada FM 94.9",
+            type: "radio",
+            url: "https://27383.live.streamtheworld.com:443/RADIO_ALVORADAAAC.aac",
+            icon: "https://i.postimg.cc/Bnyrs1H3/04008017950.png",
+            city: "Belo Horizonte",
+            state: "MG",
+            category: "mg",
+            frequency: "94.9 FM",
+            letter: "A"
+          },
+          {
+            id: "antena1_105.1fm",
+            name: "Rádio Antena 1 105.1 FM",
+            type: "radio",
+            url: "https://stream.antena1.com.br/stream15",
+            icon: "https://img.radios.com.br/radio/lg/radio26098_1611252935.png",
+            city: "Belo Horizonte",
+            state: "MG",
+            category: "mg",
+            frequency: "105.1 FM",
+            letter: "A"
+          },
+          {
+            id: "bh_fm",
+            name: "Rádio BH FM 102.1",
+            type: "radio",
+            url: "https://27403.live.streamtheworld.com:443/BHFMAAC.aac?dist=radioscombr",
+            icon: "https://img.radios.com.br/radio/lg/radio8813_1622543620.png",
+            city: "Belo Horizonte",
+            state: "MG",
+            category: "mg",
+            frequency: "102.1 FM",
+            letter: "B"
+          },
+          {
+            id: "clubefm96.5",
+            name: "Clube FM 96.5",
+            type: "radio",
+            url: "https://8112.brasilstream.com.br/stream",
+            icon: "https://i.postimg.cc/CxFCvF1V/04008017011.jpg",
+            city: "Belo Horizonte",
+            state: "MG",
+            category: "mg",
+            frequency: "96.5 FM",
+            letter: "C"
+          },
+          {
+            id: "radiomaxima97.1fm",
+            name: "Rádio Máxima 97.1 FM",
+            type: "radio",
+            url: "https://virtues.live:8226/stream?type=.flv",
+            icon: "https://img.radios.com.br/radio/lg/radio13829_1518724872.jpg",
+            city: "Bom Despacho",
+            state: "MG",
+            category: "mg",
+            frequency: "97.1 FM",
+            letter: "M"
+          },
+          {
+            id: "radiominas104.1fm",
+            name: "Rádio Minas 104.1 FM",
+            type: "radio",
+            url: "http://centova.jmvstream.com:9816/stream",
+            icon: "https://img.radios.com.br/radio/lg/radio13695_1545903190.png",
+            city: "Divinópolis",
+            state: "MG",
+            category: "mg",
+            frequency: "104.1 FM",
+            letter: "M"
+          },
+          {
+            id: "lightfm103.9",
+            name: "Light FM 103.9",
+            type: "radio",
+            url: "https://8231.brasilstream.com.br/stream",
+            icon: "https://lightfm1039.com.br/wp-content/uploads/2022/09/cropped-favicon-180x180.png",
+            city: "Belo Horizonte",
+            state: "MG",
+            category: "mg",
+            frequency: "FM 103.9",
+            letter: "L"
+          },
+          {
+            id: "radiosuper95fm",
+            name: "Rádio Super 95 FM",
+            type: "radio",
+            url: "http://srv01.brasilstream.com.br:8038/stream",
+            icon: "https://img.radios.com.br/radio/lg/radio32982_1748260020.jpg",
+            city: "Coromandel",
+            state: "MG",
+            category: "mg",
+            frequency: "95 FM",
+            letter: "S"
+          }
+        ];
+
+        // Combinar todas as rádios organizadas por estado
+        this.radios = [
+          ...radiosCeara,
+          ...radiosMaranhao, 
+          ...radiosPara,
+          ...radiosSaoPaulo,
+          ...radiosMinasGerais
+        ];
+
+        console.log(`${this.radios.length} rádios carregadas e organizadas por estado e cidade`);
+      }
+
+      setupEventListeners() {
+        // Radio category tabs
+        document.querySelectorAll('#radioTabNav .tab-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('#radioTabNav .tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            this.activeRadioCategory = btn.dataset.category;
+            this.renderRadios();
+          });
+        });
+      }
+
+      renderRadios() {
+        const radioList = document.getElementById('radioList');
+        let filteredRadios = this.radios;
+        
+        if (this.activeRadioCategory !== 'all') {
+          filteredRadios = this.radios.filter(radio => radio.category === this.activeRadioCategory);
+        }
+
+        if (filteredRadios.length === 0) {
+          radioList.innerHTML = `
+            <div class="text-center p-4">
+              <i class="fas fa-radio fa-3x text-muted mb-3"></i>
+              <p class="text-muted">Nenhuma rádio encontrada nesta categoria</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Organizar rádios alfabeticamente por letra e depois por cidade
+        const sortedRadios = filteredRadios.sort((a, b) => {
+          // Primeiro ordenar por letra
+          const letterA = (a.letter || '').toUpperCase();
+          const letterB = (b.letter || '').toUpperCase();
+          const letterComparison = letterA.localeCompare(letterB);
+          
+          if (letterComparison !== 0) {
+            return letterComparison;
+          }
+          
+          // Se as letras são iguais, ordenar por cidade
+          const cityA = (a.city || '').toLowerCase();
+          const cityB = (b.city || '').toLowerCase();
+          return cityA.localeCompare(cityB);
+        });
+
+        // Agrupar por cidade dentro de cada categoria/estado
+        const radiosByCity = {};
+        sortedRadios.forEach(radio => {
+          const cityKey = radio.city || 'Outras';
+          if (!radiosByCity[cityKey]) {
+            radiosByCity[cityKey] = [];
+          }
+          radiosByCity[cityKey].push(radio);
+        });
+
+        radioList.innerHTML = '';
+        
+        // Se estiver mostrando todas as categorias, agrupar por estado e cidade
+        if (this.activeRadioCategory === 'all') {
+          const radiosByState = {};
+          sortedRadios.forEach(radio => {
+            const stateKey = radio.state || 'Nacional';
+            if (!radiosByState[stateKey]) {
+              radiosByState[stateKey] = {};
+            }
+            const cityKey = radio.city || 'Outras';
+            if (!radiosByState[stateKey][cityKey]) {
+              radiosByState[stateKey][cityKey] = [];
+            }
+            radiosByState[stateKey][cityKey].push(radio);
+          });
+
+          // Renderizar por estado e cidade
+          Object.keys(radiosByState).sort().forEach(state => {
+            // Adicionar cabeçalho do estado
+            const stateHeader = document.createElement('div');
+            stateHeader.className = 'state-header';
+            stateHeader.innerHTML = `<i class="fas fa-map-marker-alt me-2"></i>${state}`;
+            radioList.appendChild(stateHeader);
+
+            // Renderizar cidades dentro do estado
+            Object.keys(radiosByState[state]).sort().forEach(city => {
+              // Adicionar subcabeçalho da cidade
+              const cityHeader = document.createElement('div');
+              cityHeader.className = 'city-header';
+              cityHeader.innerHTML = `<i class="fas fa-city me-2"></i>${city}`;
+              radioList.appendChild(cityHeader);
+
+              // Renderizar rádios da cidade
+              radiosByState[state][city].forEach(radio => {
+                const item = this.createContentItem(radio, 'radio');
+                radioList.appendChild(item);
+              });
+            });
+          });
+        } else {
+          // Se estiver filtrado por estado específico, mostrar apenas por cidade
+          Object.keys(radiosByCity).sort().forEach(city => {
+            // Adicionar cabeçalho da cidade
+            const cityHeader = document.createElement('div');
+            cityHeader.className = 'city-header';
+            cityHeader.innerHTML = `<i class="fas fa-city me-2"></i>${city}`;
+            radioList.appendChild(cityHeader);
+
+            // Renderizar rádios da cidade
+            radiosByCity[city].forEach(radio => {
+              const item = this.createContentItem(radio, 'radio');
+              radioList.appendChild(item);
+            });
+          });
+        }
+      }
+
+      createContentItem(content, type) {
+        const item = document.createElement('div');
+        item.className = 'content-item';
+        
+        const isPlaying = type === 'radio' && this.currentRadio?.id === content.id;
+
+        if (isPlaying) {
+          item.classList.add('playing');
+        }
+
+        item.innerHTML = `
+          <div class="content-avatar" ${content.icon ? `style="background-image: url('${content.icon}'); background-size: cover; background-position: center;"` : ''}>
+            ${!content.icon ? '<i class="fas fa-radio"></i>' : ''}
+          </div>
+          <div class="content-info">
+            <h4>${content.name}</h4>
+            <p>${content.frequency || 'Streaming'} ${content.city ? '• ' + content.city : ''}</p>
+          </div>
+          ${isPlaying ? '<i class="fas fa-volume-up text-primary ms-2"></i>' : ''}
+        `;
+
+        item.addEventListener('click', () => this.playRadio(content));
+        
+        return item;
+      }
+
+      playRadio(radio) {
+        this.currentRadio = radio;
+        console.log('Reproduzindo rádio:', radio.name);
+        
+        // Atualizar interface
+        this.renderRadios();
+        
+        // Aqui você implementaria a lógica de reprodução de áudio
+        // Por exemplo, usando HTMLAudioElement ou HLS.js
+        this.setupAudioPlayer(radio.url);
+      }
+
+      setupAudioPlayer(url) {
+        const videoContainer = document.querySelector('#videoPlayer');
+        
+        // Remover player anterior se existir
+        if (this.player) {
+          this.player.pause();
+          this.player = null;
+        }
+
+        // Criar novo elemento de áudio
+        this.player = new Audio();
+        this.player.src = url;
+        this.player.crossOrigin = 'anonymous';
+        
+        // Event listeners
+        this.player.addEventListener('loadstart', () => {
+          videoContainer.innerHTML = `
+            <div class="video-placeholder">
+              <i class="fas fa-radio fa-spin"></i>
+              <h4>Conectando à rádio...</h4>
+            </div>
+          `;
+        });
+
+        this.player.addEventListener('canplay', () => {
+          videoContainer.innerHTML = `
+            <div class="video-placeholder">
+              <i class="fas fa-radio text-success"></i>
+              <h4>${this.currentRadio.name}</h4>
+              <p>${this.currentRadio.frequency || 'Streaming'}</p>
+              <button class="btn btn-primary mt-3" onclick="app.togglePlayPause()">
+                <i class="fas fa-pause me-2"></i>Pausar
+              </button>
+            </div>
+          `;
+          this.player.play().catch(console.error);
+        });
+
+        this.player.addEventListener('error', (e) => {
+          console.error('Erro ao reproduzir rádio:', e);
+          videoContainer.innerHTML = `
+            <div class="video-placeholder">
+              <i class="fas fa-exclamation-triangle text-warning"></i>
+              <h4>Erro ao conectar à rádio</h4>
+              <p>Tente novamente em alguns instantes</p>
+            </div>
+          `;
+        });
+
+        // Tentar reproduzir
+        this.player.load();
+      }
+
+      togglePlayPause() {
+        if (!this.player) return;
+        
+        if (this.player.paused) {
+          this.player.play().catch(console.error);
+          document.querySelector('.video-placeholder button i').className = 'fas fa-pause me-2';
+          document.querySelector('.video-placeholder button').innerHTML = '<i class="fas fa-pause me-2"></i>Pausar';
+        } else {
+          this.player.pause();
+          document.querySelector('.video-placeholder button i').className = 'fas fa-play me-2';
+          document.querySelector('.video-placeholder button').innerHTML = '<i class="fas fa-play me-2"></i>Reproduzir';
+        }
+      }
+
+      toggleTheme() {
+        this.currentThemeIndex = (this.currentThemeIndex + 1) % this.themes.length;
+        document.body.setAttribute('data-theme', this.themes[this.currentThemeIndex]);
+      }
+
+      toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(console.error);
+        } else {
+          document.exitFullscreen().catch(console.error);
+        }
+      }
+    }
+
+    // Inicializar aplicativo
+    const app = new IPTVApp();
+    
+    // Disponibilizar globalmente para uso nos event handlers
+    window.app = app;
+  </script>
+</body>
+</html>
