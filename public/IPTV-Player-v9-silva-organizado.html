@@ -1643,6 +1643,9 @@
     <div class="header d-flex justify-content-between align-items-center">
       <h1><i class="fas fa-fire me-2"></i>IPTV Player v9</h1>
       <div class="header-buttons">
+        <button class="header-btn" id="relayMonitorBtn" title="Monitor de Relay">
+          <i class="fas fa-broadcast-tower"></i>
+        </button>
         <button class="header-btn" id="themeBtn" title="Temas">
           <i class="fas fa-palette"></i>
         </button>
@@ -1962,6 +1965,72 @@
     </div>
   </div>
 
+  <!-- Relay Monitor Modal -->
+  <div class="modal fade" id="relayMonitorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">🔄 Monitor de Retransmissão WebSocket</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <span class="badge bg-success" id="relayStatus">Sistema Ativo</span>
+              <small class="text-muted ms-2" id="lastUpdate"></small>
+            </div>
+            <button class="btn btn-sm btn-outline-primary" onclick="app.refreshRelayStatus()">
+              <i class="fas fa-sync-alt"></i> Atualizar
+            </button>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                  <h4 class="mb-0" id="totalSessions">0</h4>
+                  <small>Sessões Ativas</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                  <h4 class="mb-0" id="totalClients">0</h4>
+                  <small>Clientes Conectados</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                  <h4 class="mb-0" id="relayUptime">00:00</h4>
+                  <small>Tempo Ativo</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h6 class="mb-2">Sessões de Retransmissão:</h6>
+          <div id="relaySessionsList" class="list-group" style="max-height: 300px; overflow-y: auto;">
+            <div class="text-center text-muted py-3">
+              <i class="fas fa-wifi fa-2x mb-2"></i>
+              <p>Nenhuma sessão ativa no momento</p>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <small class="text-muted">
+              <i class="fas fa-info-circle"></i>
+              O sistema de relay permite que múltiplos dispositivos assistam ao mesmo conteúdo
+              através de uma única conexão com a fonte original, otimizando o uso de banda.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Error Overlay -->
   <div class="error-overlay" id="errorOverlay">
     <div class="error-content">
@@ -2136,6 +2205,14 @@
           username: 'IPTVBR',
           password: 'IPTVBR'
         };
+        
+        // WebSocket Relay System para retransmissão de streams
+        this.streamRelay = {
+          sessions: new Map(),
+          supabaseUrl: 'https://zgydjxzdcpemfshhvptw.supabase.co/functions/v1/stream-relay',
+          isEnabled: true
+        };
+        
         this.initRadios();
         this.init();
       }
@@ -2618,6 +2695,122 @@
         }
       }
 
+      // ====== SISTEMA DE RETRANSMISSÃO WEBSOCKET ======
+      async createStreamRelay(streamUrl, contentName) {
+        if (!this.streamRelay.isEnabled) {
+          console.log('Sistema de relay desabilitado');
+          return { success: false, originalUrl: streamUrl };
+        }
+
+        try {
+          const sessionId = crypto.randomUUID();
+          const relayUrl = `${this.streamRelay.supabaseUrl}/create-relay?url=${encodeURIComponent(streamUrl)}&sessionId=${sessionId}`;
+          
+          const response = await fetch(relayUrl, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error(`Erro na criação do relay: ${response.status}`);
+          }
+
+          const relayData = await response.json();
+          console.log(`✅ Relay criado para "${contentName}":`, relayData);
+
+          // Armazenar informações da sessão
+          this.streamRelay.sessions.set(sessionId, {
+            ...relayData,
+            originalUrl: streamUrl,
+            contentName,
+            createdAt: Date.now()
+          });
+
+          // Mostrar notificação de sucesso
+          this.showNotification(`🔄 Relay ativo para "${contentName}" - ${relayData.clientCount} cliente(s)`, 'success');
+
+          return {
+            success: true,
+            sessionId,
+            relayUrl: `${this.streamRelay.supabaseUrl}${relayData.relayUrl}`,
+            httpUrl: `${this.streamRelay.supabaseUrl}${relayData.httpUrl}`,
+            originalUrl: streamUrl
+          };
+
+        } catch (error) {
+          console.error('❌ Erro ao criar relay:', error);
+          this.showNotification(`⚠️ Falha no relay para "${contentName}" - usando fonte original`, 'warning');
+          return { success: false, originalUrl: streamUrl };
+        }
+      }
+
+      async getRelayStatus() {
+        try {
+          const response = await fetch(`${this.streamRelay.supabaseUrl}/status`);
+          if (response.ok) {
+            const status = await response.json();
+            console.log('📊 Status do sistema de relay:', status);
+            return status;
+          }
+        } catch (error) {
+          console.error('Erro ao obter status do relay:', error);
+        }
+        return null;
+      }
+
+      async cleanupOldSessions() {
+        const now = Date.now();
+        const maxAge = 2 * 60 * 60 * 1000; // 2 horas
+
+        for (const [sessionId, session] of this.streamRelay.sessions.entries()) {
+          if (now - session.createdAt > maxAge) {
+            console.log(`🧹 Removendo sessão antiga: ${sessionId}`);
+            this.streamRelay.sessions.delete(sessionId);
+          }
+        }
+      }
+
+      showNotification(message, type = 'info') {
+        // Criar elemento de notificação
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} notification-toast`;
+        notification.style.cssText = `
+          position: fixed;
+          top: 80px;
+          right: 20px;
+          z-index: 9999;
+          min-width: 300px;
+          max-width: 400px;
+          padding: 12px 16px;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          transform: translateX(100%);
+          transition: transform 0.3s ease;
+        `;
+        notification.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+            <span style="flex: 1; font-size: 0.9rem;">${message}</span>
+            <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+          </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Animar entrada
+        setTimeout(() => {
+          notification.style.transform = 'translateX(0)';
+        }, 100);
+
+        // Auto remover após 5 segundos
+        setTimeout(() => {
+          notification.style.transform = 'translateX(100%)';
+          setTimeout(() => notification.remove(), 300);
+        }, 5000);
+      }
+
       setupEventListeners() {
         // Theme button
         document.getElementById('themeBtn').addEventListener('click', openThemeModal);
@@ -2627,6 +2820,13 @@
           option.addEventListener('click', () => {
             changeTheme(option.dataset.theme);
           });
+        });
+
+        // Relay Monitor button
+        document.getElementById('relayMonitorBtn').addEventListener('click', () => {
+          const modal = new bootstrap.Modal(document.getElementById('relayMonitorModal'));
+          this.refreshRelayStatus();
+          modal.show();
         });
 
         // Share button
@@ -3378,7 +3578,7 @@
       playMovie(movie) {
         const progress = this.checkContinueWatching(movie, 'movie');
 
-        const doPlay = (startTime = 0) => {
+        const doPlay = async (startTime = 0) => {
           try {
             this.animateLogo(); // NOVA LINHA - Anima a logo
             this.currentMovie = movie;
@@ -3387,8 +3587,12 @@
             this.currentEpisode = null;
             this.currentRadio = null;
 
-            // Use advanced player
-            this.setupAdvancedPlayer(movie.url, 'movie');
+            // 🔄 Criar relay para retransmissão
+            const relayResult = await this.createStreamRelay(movie.url, movie.name);
+            const streamUrl = relayResult.success ? relayResult.relayUrl : relayResult.originalUrl;
+
+            // Use advanced player com URL do relay ou original
+            this.setupAdvancedPlayer(streamUrl, 'movie');
 
             this.player.ready(() => {
               if (startTime > 0) {
@@ -3415,7 +3619,7 @@
         }
       }
 
-      playRadio(radio) {
+      async playRadio(radio) {
         try {
           this.animateLogo(); // NOVA LINHA - Anima a logo
           this.currentRadio = radio;
@@ -3424,8 +3628,12 @@
           this.currentSeries = null;
           this.currentEpisode = null;
 
-          // Use advanced player for radio
-          this.setupAdvancedPlayer(radio.url, 'radio');
+          // 🔄 Criar relay para retransmissão da rádio
+          const relayResult = await this.createStreamRelay(radio.url, radio.name);
+          const streamUrl = relayResult.success ? relayResult.relayUrl : relayResult.originalUrl;
+
+          // Use advanced player for radio com URL do relay ou original
+          this.setupAdvancedPlayer(streamUrl, 'radio');
 
           this.player.ready(() => {
             this.player.play();
@@ -4338,6 +4546,83 @@
             this.showError('Não foi possível copiar o link');
           });
         }
+      }
+
+      // ====== FUNÇÕES DO MONITOR DE RELAY ======
+      async refreshRelayStatus() {
+        try {
+          const status = await this.getRelayStatus();
+          this.updateRelayMonitor(status);
+          document.getElementById('lastUpdate').textContent = `Atualizado às ${new Date().toLocaleTimeString()}`;
+        } catch (error) {
+          console.error('Erro ao atualizar status do relay:', error);
+          document.getElementById('relayStatus').textContent = 'Erro na Conexão';
+          document.getElementById('relayStatus').className = 'badge bg-danger';
+        }
+      }
+
+      updateRelayMonitor(status) {
+        if (!status) {
+          document.getElementById('relayStatus').textContent = 'Desconectado';
+          document.getElementById('relayStatus').className = 'badge bg-secondary';
+          return;
+        }
+
+        // Atualizar cards de estatísticas
+        document.getElementById('totalSessions').textContent = status.totalSessions || 0;
+        
+        const totalClients = status.activeSessions?.reduce((sum, session) => sum + (session.clientCount || 0), 0) || 0;
+        document.getElementById('totalClients').textContent = totalClients;
+
+        // Status geral
+        if (status.totalSessions > 0) {
+          document.getElementById('relayStatus').textContent = 'Ativo';
+          document.getElementById('relayStatus').className = 'badge bg-success';
+        } else {
+          document.getElementById('relayStatus').textContent = 'Aguardando';
+          document.getElementById('relayStatus').className = 'badge bg-warning';
+        }
+
+        // Atualizar lista de sessões
+        this.updateRelaySessionsList(status.activeSessions || []);
+      }
+
+      updateRelaySessionsList(sessions) {
+        const sessionsList = document.getElementById('relaySessionsList');
+        
+        if (!sessions.length) {
+          sessionsList.innerHTML = `
+            <div class="text-center text-muted py-3">
+              <i class="fas fa-wifi fa-2x mb-2"></i>
+              <p>Nenhuma sessão ativa no momento</p>
+            </div>
+          `;
+          return;
+        }
+
+        sessionsList.innerHTML = sessions.map(session => `
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="mb-1">
+                <i class="fas fa-broadcast-tower text-primary me-2"></i>
+                Sessão: ${session.id.substr(0, 8)}...
+              </h6>
+              <p class="mb-1 small text-muted">
+                <i class="fas fa-link me-1"></i>
+                ${session.sourceUrl ? new URL(session.sourceUrl).hostname : 'URL não disponível'}
+              </p>
+              <small class="text-success">
+                <i class="fas fa-circle me-1"></i>
+                ${session.isActive ? 'Ativo' : 'Inativo'}
+              </small>
+            </div>
+            <div class="text-end">
+              <span class="badge bg-primary">${session.clientCount || 0} cliente(s)</span>
+              <br>
+              <small class="text-muted">ID: ${session.id.substr(0, 8)}</small>
+            </div>
+          </div>
+        `).join('');
       }
 
       showErrorOverlay(message, retryCallback) {
