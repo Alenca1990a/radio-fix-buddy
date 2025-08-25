@@ -2213,6 +2213,9 @@
           isEnabled: true
         };
         
+        // Teste de conectividade na inicialização
+        this.testRelayConnectivity();
+        
         this.initRadios();
         this.init();
       }
@@ -2703,41 +2706,118 @@
         }
 
         try {
+          console.log(`🔄 Iniciando relay para "${contentName}": ${streamUrl}`);
           const sessionId = crypto.randomUUID();
-          const relayUrl = `${this.streamRelay.supabaseUrl}/create-relay?url=${encodeURIComponent(streamUrl)}&sessionId=${sessionId}`;
           
-          const response = await fetch(relayUrl, {
+          // Criar sessão no servidor
+          const createResponse = await fetch(`${this.streamRelay.supabaseUrl}/create-relay?url=${encodeURIComponent(streamUrl)}&sessionId=${sessionId}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
             }
           });
 
-          if (!response.ok) {
-            throw new Error(`Erro na criação do relay: ${response.status}`);
+          if (!createResponse.ok) {
+            throw new Error(`Erro na criação do relay: ${createResponse.status}`);
           }
 
-          const relayData = await response.json();
-          console.log(`✅ Relay criado para "${contentName}":`, relayData);
+          const relayData = await createResponse.json();
+          console.log(`✅ Sessão de relay criada para "${contentName}":`, relayData);
 
+          // Conectar via WebSocket para receber a stream
+          const wsUrl = `wss://zgydjxzdcpemfshhvptw.supabase.co/functions/v1/stream-relay/relay/${relayData.sessionId}`;
+          console.log(`🔌 Conectando WebSocket: ${wsUrl}`);
+          
+          const websocket = new WebSocket(wsUrl);
+          let isConnected = false;
+          
           // Armazenar informações da sessão
-          this.streamRelay.sessions.set(sessionId, {
+          const sessionData = {
             ...relayData,
             originalUrl: streamUrl,
             contentName,
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            websocket: websocket,
+            isConnected: false
+          };
+          
+          this.streamRelay.sessions.set(sessionId, sessionData);
+
+          // Promise para aguardar conexão
+          const connectionPromise = new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error('Timeout na conexão WebSocket'));
+            }, 10000);
+
+            websocket.onopen = () => {
+              console.log(`✅ WebSocket conectado para "${contentName}"`);
+              clearTimeout(timeout);
+              isConnected = true;
+              sessionData.isConnected = true;
+              
+              // Enviar URL da fonte para o servidor
+              websocket.send(JSON.stringify({
+                type: 'set_source_url',
+                url: streamUrl
+              }));
+              console.log(`📤 URL da fonte enviada via WebSocket: ${streamUrl}`);
+              
+              resolve();
+            };
+
+            websocket.onerror = (error) => {
+              console.error(`❌ Erro no WebSocket para "${contentName}":`, error);
+              clearTimeout(timeout);
+              reject(error);
+            };
+
+            websocket.onclose = () => {
+              console.log(`🔌 WebSocket desconectado para "${contentName}"`);
+              sessionData.isConnected = false;
+            };
+
+            websocket.onmessage = (event) => {
+              try {
+                const data = JSON.parse(event.data);
+                console.log(`📡 Mensagem WebSocket para "${contentName}":`, data.type);
+                
+                if (data.type === 'connection_established') {
+                  console.log(`🔗 Conexão confirmada: ${data.message}`);
+                }
+              } catch (error) {
+                // Se não for JSON, pode ser dados binários da stream
+                console.log(`📡 Dados de stream recebidos via WebSocket para "${contentName}"`);
+              }
+            };
           });
 
-          // Mostrar notificação de sucesso
-          this.showNotification(`🔄 Relay ativo para "${contentName}" - ${relayData.clientCount} cliente(s)`, 'success');
-
-          return {
-            success: true,
-            sessionId,
-            relayUrl: `${this.streamRelay.supabaseUrl}${relayData.relayUrl}`,
-            httpUrl: `${this.streamRelay.supabaseUrl}${relayData.httpUrl}`,
-            originalUrl: streamUrl
-          };
+          try {
+            await connectionPromise;
+            this.showNotification(`🔄 Relay WebSocket ativo para "${contentName}"`, 'success');
+            
+            return {
+              success: true,
+              sessionId,
+              websocketUrl: wsUrl,
+              httpUrl: `${this.streamRelay.supabaseUrl}/stream/${relayData.sessionId}`,
+              originalUrl: streamUrl,
+              isWebSocket: true
+            };
+            
+          } catch (connectionError) {
+            console.warn(`⚠️ Falha na conexão WebSocket para "${contentName}", usando HTTP:`, connectionError);
+            websocket.close();
+            
+            // Fallback para HTTP
+            return {
+              success: true,
+              sessionId,
+              relayUrl: `${this.streamRelay.supabaseUrl}/stream/${relayData.sessionId}`,
+              httpUrl: `${this.streamRelay.supabaseUrl}/stream/${relayData.sessionId}`,
+              originalUrl: streamUrl,
+              isWebSocket: false
+            };
+          }
 
         } catch (error) {
           console.error('❌ Erro ao criar relay:', error);
@@ -2748,16 +2828,65 @@
 
       async getRelayStatus() {
         try {
-          const response = await fetch(`${this.streamRelay.supabaseUrl}/status`);
+          console.log('🔍 Verificando status do relay...');
+          const response = await fetch(`${this.streamRelay.supabaseUrl}/status`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
           if (response.ok) {
             const status = await response.json();
             console.log('📊 Status do sistema de relay:', status);
-            return status;
+            
+            // Verificar conexões WebSocket locais
+            const localSessions = [];
+            for (const [sessionId, session] of this.streamRelay.sessions.entries()) {
+              localSessions.push({
+                id: sessionId,
+                contentName: session.contentName,
+                isConnected: session.isConnected,
+                websocketState: session.websocket ? session.websocket.readyState : 'N/A',
+                createdAt: new Date(session.createdAt).toLocaleTimeString()
+              });
+            }
+            
+            return {
+              ...status,
+              localSessions: localSessions,
+              totalLocalSessions: localSessions.length,
+              connectedLocalSessions: localSessions.filter(s => s.isConnected).length
+            };
+          } else {
+            console.warn('⚠️ Resposta não OK do servidor de relay:', response.status);
           }
         } catch (error) {
-          console.error('Erro ao obter status do relay:', error);
+          console.error('❌ Erro ao obter status do relay:', error);
         }
         return null;
+      }
+
+      async testRelayConnectivity() {
+        try {
+          console.log('🔍 Testando conectividade com o sistema de relay...');
+          const response = await fetch(`${this.streamRelay.supabaseUrl}/status`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (response.ok) {
+            console.log('✅ Conectividade com relay confirmada');
+            const status = await response.json();
+            console.log('📊 Status inicial do relay:', status);
+          } else {
+            console.warn('⚠️ Problema na conectividade do relay:', response.status);
+            this.showNotification('⚠️ Sistema de relay indisponível - usando streams originais', 'warning');
+          }
+        } catch (error) {
+          console.error('❌ Erro ao testar conectividade do relay:', error);
+          this.showNotification('❌ Sistema de relay offline - usando streams originais', 'error');
+        }
       }
 
       async cleanupOldSessions() {
@@ -2767,6 +2896,12 @@
         for (const [sessionId, session] of this.streamRelay.sessions.entries()) {
           if (now - session.createdAt > maxAge) {
             console.log(`🧹 Removendo sessão antiga: ${sessionId}`);
+            
+            // Fechar WebSocket se ainda estiver aberto
+            if (session.websocket && session.websocket.readyState === WebSocket.OPEN) {
+              session.websocket.close();
+            }
+            
             this.streamRelay.sessions.delete(sessionId);
           }
         }
@@ -3589,7 +3724,19 @@
 
             // 🔄 Criar relay para retransmissão
             const relayResult = await this.createStreamRelay(movie.url, movie.name);
-            const streamUrl = relayResult.success ? relayResult.relayUrl : relayResult.originalUrl;
+            let streamUrl = relayResult.originalUrl; // Use original URL como fallback
+            
+            if (relayResult.success) {
+              if (relayResult.isWebSocket) {
+                // Para WebSocket, use a URL HTTP como fallback
+                streamUrl = relayResult.httpUrl || relayResult.originalUrl;
+                console.log(`🔄 Usando relay HTTP para WebSocket: ${streamUrl}`);
+              } else {
+                // Para HTTP relay
+                streamUrl = relayResult.relayUrl || relayResult.httpUrl || relayResult.originalUrl;
+                console.log(`🔄 Usando relay HTTP: ${streamUrl}`);
+              }
+            }
 
             // Use advanced player com URL do relay ou original
             this.setupAdvancedPlayer(streamUrl, 'movie');
@@ -3630,7 +3777,19 @@
 
           // 🔄 Criar relay para retransmissão da rádio
           const relayResult = await this.createStreamRelay(radio.url, radio.name);
-          const streamUrl = relayResult.success ? relayResult.relayUrl : relayResult.originalUrl;
+          let streamUrl = relayResult.originalUrl; // Use original URL como fallback
+          
+          if (relayResult.success) {
+            if (relayResult.isWebSocket) {
+              // Para WebSocket, use a URL HTTP como fallback
+              streamUrl = relayResult.httpUrl || relayResult.originalUrl;
+              console.log(`🔄 Usando relay HTTP para WebSocket rádio: ${streamUrl}`);
+            } else {
+              // Para HTTP relay
+              streamUrl = relayResult.relayUrl || relayResult.httpUrl || relayResult.originalUrl;
+              console.log(`🔄 Usando relay HTTP para rádio: ${streamUrl}`);
+            }
+          }
 
           // Use advanced player for radio com URL do relay ou original
           this.setupAdvancedPlayer(streamUrl, 'radio');
@@ -4564,27 +4723,40 @@
       updateRelayMonitor(status) {
         if (!status) {
           document.getElementById('relayStatus').textContent = 'Desconectado';
-          document.getElementById('relayStatus').className = 'badge bg-secondary';
+          document.getElementById('relayStatus').className = 'badge bg-danger';
+          document.getElementById('totalSessions').textContent = '0';
+          document.getElementById('totalClients').textContent = '0';
           return;
         }
 
         // Atualizar cards de estatísticas
-        document.getElementById('totalSessions').textContent = status.totalSessions || 0;
+        const serverSessions = status.totalSessions || 0;
+        const localSessions = status.totalLocalSessions || 0;
+        const connectedLocal = status.connectedLocalSessions || 0;
+        
+        document.getElementById('totalSessions').textContent = `${serverSessions} (${localSessions} local)`;
         
         const totalClients = status.activeSessions?.reduce((sum, session) => sum + (session.clientCount || 0), 0) || 0;
         document.getElementById('totalClients').textContent = totalClients;
 
-        // Status geral
-        if (status.totalSessions > 0) {
-          document.getElementById('relayStatus').textContent = 'Ativo';
+        // Status geral baseado em conexões locais e do servidor
+        if (connectedLocal > 0 || serverSessions > 0) {
+          document.getElementById('relayStatus').textContent = `Ativo (${connectedLocal}/${localSessions} WS)`;
           document.getElementById('relayStatus').className = 'badge bg-success';
+        } else if (localSessions > 0) {
+          document.getElementById('relayStatus').textContent = 'Conectando...';
+          document.getElementById('relayStatus').className = 'badge bg-warning';
         } else {
           document.getElementById('relayStatus').textContent = 'Aguardando';
-          document.getElementById('relayStatus').className = 'badge bg-warning';
+          document.getElementById('relayStatus').className = 'badge bg-secondary';
         }
 
-        // Atualizar lista de sessões
-        this.updateRelaySessionsList(status.activeSessions || []);
+        // Atualizar lista de sessões (combinando servidor e local)
+        const allSessions = [
+          ...(status.activeSessions || []),
+          ...(status.localSessions || [])
+        ];
+        this.updateRelaySessionsList(allSessions);
       }
 
       updateRelaySessionsList(sessions) {
@@ -4600,29 +4772,40 @@
           return;
         }
 
-        sessionsList.innerHTML = sessions.map(session => `
-          <div class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-              <h6 class="mb-1">
-                <i class="fas fa-broadcast-tower text-primary me-2"></i>
-                Sessão: ${session.id.substr(0, 8)}...
-              </h6>
-              <p class="mb-1 small text-muted">
-                <i class="fas fa-link me-1"></i>
-                ${session.sourceUrl ? new URL(session.sourceUrl).hostname : 'URL não disponível'}
-              </p>
-              <small class="text-success">
-                <i class="fas fa-circle me-1"></i>
-                ${session.isActive ? 'Ativo' : 'Inativo'}
-              </small>
+        sessionsList.innerHTML = sessions.map(session => {
+          const isLocal = session.contentName !== undefined;
+          const sessionType = isLocal ? 'Local WebSocket' : 'Servidor';
+          const statusIcon = isLocal ? 
+            (session.isConnected ? 'fas fa-wifi text-success' : 'fas fa-wifi text-danger') : 
+            'fas fa-server text-info';
+          
+          return `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="mb-1">
+                  <i class="${statusIcon} me-2"></i>
+                  ${isLocal ? session.contentName : `Sessão: ${session.id.substr(0, 8)}...`}
+                </h6>
+                <p class="mb-1 small text-muted">
+                  <i class="fas fa-tag me-1"></i>
+                  ${sessionType}
+                  ${isLocal ? ` • ${session.createdAt}` : ''}
+                </p>
+                <small class="${isLocal && session.isConnected ? 'text-success' : isLocal ? 'text-warning' : 'text-info'}">
+                  <i class="fas fa-circle me-1"></i>
+                  ${isLocal ? 
+                    (session.isConnected ? `WebSocket Conectado (${session.websocketState})` : `Desconectado (${session.websocketState})`) : 
+                    (session.isActive ? 'Ativo no Servidor' : 'Inativo no Servidor')
+                  }
+                </small>
+              </div>
+              <div class="text-end">
+                ${!isLocal ? `<span class="badge bg-primary">${session.clientCount || 0} cliente(s)</span><br>` : ''}
+                <small class="text-muted">ID: ${session.id.substr(0, 8)}</small>
+              </div>
             </div>
-            <div class="text-end">
-              <span class="badge bg-primary">${session.clientCount || 0} cliente(s)</span>
-              <br>
-              <small class="text-muted">ID: ${session.id.substr(0, 8)}</small>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
 
       showErrorOverlay(message, retryCallback) {

@@ -74,40 +74,83 @@ serve(async (req) => {
       })
     }
 
+    console.log(`Tentativa de conexão WebSocket para sessão: ${sessionId}`)
+
     const { socket, response } = Deno.upgradeWebSocket(req)
     
     let session = streamSessions.get(sessionId)
     if (!session) {
-      socket.close(1008, "Sessão não encontrada")
-      return response
+      console.log(`Sessão não encontrada: ${sessionId}. Criando nova sessão temporária.`)
+      // Criar sessão temporária se não existir
+      session = {
+        id: sessionId,
+        sourceUrl: '',
+        clientCount: 0,
+        clients: new Set(),
+        isActive: false
+      }
+      streamSessions.set(sessionId, session)
     }
 
     // Adicionar cliente à sessão
     session.clients.add(socket)
     session.clientCount = session.clients.size
 
-    console.log(`Cliente conectado à sessão ${sessionId}. Total: ${session.clientCount}`)
+    console.log(`✅ Cliente WebSocket conectado à sessão ${sessionId}. Total: ${session.clientCount}`)
 
-    // Iniciar retransmissão se for o primeiro cliente
-    if (session.clientCount === 1 && !session.isActive) {
+    // Enviar mensagem de confirmação de conexão
+    socket.onopen = () => {
+      console.log(`WebSocket aberto para sessão ${sessionId}`)
+      socket.send(JSON.stringify({
+        type: 'connection_established',
+        sessionId: sessionId,
+        message: 'Conexão WebSocket estabelecida com sucesso'
+      }))
+    }
+
+    // Iniciar retransmissão se houver URL da fonte e for o primeiro cliente
+    if (session.sourceUrl && session.clientCount === 1 && !session.isActive) {
+      console.log(`Iniciando retransmissão automática para sessão ${sessionId}`)
       startStreamRelay(session)
     }
 
     socket.onclose = () => {
+      console.log(`WebSocket fechado para sessão ${sessionId}`)
       session.clients.delete(socket)
       session.clientCount = session.clients.size
       console.log(`Cliente desconectado da sessão ${sessionId}. Restam: ${session.clientCount}`)
       
       // Parar retransmissão se não há mais clientes
       if (session.clientCount === 0) {
+        console.log(`Parando retransmissão da sessão ${sessionId} - sem clientes`)
         stopStreamRelay(session)
       }
     }
 
     socket.onerror = (error) => {
-      console.error(`Erro no WebSocket da sessão ${sessionId}:`, error)
+      console.error(`❌ Erro no WebSocket da sessão ${sessionId}:`, error)
       session.clients.delete(socket)
       session.clientCount = session.clients.size
+    }
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        console.log(`📨 Mensagem recebida na sessão ${sessionId}:`, data.type)
+        
+        // Permitir que o cliente configure a URL da fonte
+        if (data.type === 'set_source_url' && data.url) {
+          session.sourceUrl = data.url
+          console.log(`🔗 URL da fonte configurada para sessão ${sessionId}: ${data.url}`)
+          
+          // Iniciar retransmissão se não estiver ativa
+          if (!session.isActive) {
+            startStreamRelay(session)
+          }
+        }
+      } catch (error) {
+        console.error(`Erro ao processar mensagem WebSocket:`, error)
+      }
     }
 
     return response
