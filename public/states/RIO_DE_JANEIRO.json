@@ -1,0 +1,27 @@
+[
+  {
+    "id": "hitsfm106.9",
+    "name": "Hits Fm 106.9",
+    "type": "radio",
+    "url": "http://wz7.servidoresbrasil.com:8031/stream",
+    "icon": "https://redehits.fm/wp-content/uploads/2024/03/Logo-Perfil.png",
+    "city": "Macaé",
+    "state": "RJ",
+    "category": "rj",
+    "frequency": "92.9 FM",
+    "letter": "H"
+  },
+  {
+    "id": " ",
+    "name": " ",
+    "type": "radio",
+    "url": " ",
+    "icon": " ",
+    "city": " ",
+    "state": " ",
+    "category": " ",
+    "frequency": " ",
+    "letter": " "
+  }
+]
+

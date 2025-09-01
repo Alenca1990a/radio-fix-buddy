@@ -1,0 +1,62 @@
+[
+  {
+    "id": "mirante96.1fm",
+    "name": "Mirante 96.1 FM",
+    "type": "radio",
+    "url": "https://mirante2.jmvstream.com/stream",
+    "icon": "https://img.radios.com.br/radio/lg/radio13935_1744986574.png",
+    "city": "São Luís",
+    "state": "MA",
+    "category": "ma",
+    "frequency": "96.1 FM",
+    "letter": "M"
+  },
+  {
+    "id": "radiobacabal93.1fm",
+    "name": "Bacabal 93.1 FM",
+    "type": "radio",
+    "url": "http://stm7.xcast.com.br:12432/stream",
+    "icon": "https://img.radios.com.br/radio/lg/radio42603_1683298791.jpg",
+    "city": "Bacabal",
+    "state": "MA",
+    "category": "ma",
+    "frequency": "93.1 FM",
+    "letter": "B"
+  },
+  {
+    "id": "digital879fmma",
+    "name": "Digital 87.9 FM",
+    "type": "radio",
+    "url": "http://stm21.srvaudio.com.br:11676/stream",
+    "icon": "https://img.radios.com.br/radio/lg/radio41227_1693492557.jpeg",
+    "city": "Santa Luzia do Paruá - MA",
+    "state": "MA",
+    "category": "ma",
+    "frequency": "87.9 FM",
+    "letter": "D"
+  },
+  {
+    "id": "jovempanma",
+    "name": "Jovem Pan 102.5 FM",
+    "type": "radio",
+    "url": "https://radio02.zas.media/proxy/jovempansaoluis/stream",
+    "icon": "https://img.radios.com.br/radio/lg/radio16168_1674831310.jpg",
+    "city": "São Luís",
+    "state": "MA",
+    "category": "ma",
+    "frequency": "102.5 FM",
+    "letter": "J"
+  },
+  {
+    "id": "radiopinheiroma",
+    "name": "Pinheiro 103.3 FM",
+    "type": "radio",
+    "url": "http://stm15.betelhost.com.br:9050/stream",
+    "icon": "https://img.radios.com.br/radio/lg/radio185009_1626443891.jpg",
+    "city": "Pinheiro",
+    "state": "MA",
+    "category": "ma",
+    "frequency": "103.3 FM",
+    "letter": "P"
+  }
+]

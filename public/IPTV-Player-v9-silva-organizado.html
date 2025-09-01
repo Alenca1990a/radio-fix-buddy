@@ -2201,9 +2201,19 @@
         this.favoritesList = new Map(); // Cache for favorites display
         this.config = {
           server: 'http://c.maintech.top',
-          githubRawUrl: 'https://raw.githubusercontent.com/CaioCon/radiosiptvplayer/refs/heads/main/Rádios', // INSIRA AQUI A URL DO GITHUB RAW PARA CARREGAR RÁDIOS EXTRAS
+          // githubRawUrl: 'https://raw.githubusercontent.com/CaioCon/radiosiptvplayer/refs/heads/main/Rádios', // INSIRA AQUI A URL DO GITHUB RAW PARA CARREGAR RÁDIOS EXTRAS (OPCIONAL)
           username: 'IPTVBR',
-          password: 'IPTVBR'
+          password: 'IPTVBR',
+          stateChannels: {
+            'BELO_HORIZONTE': 'states/BELO_HORIZONTE.json',
+            'CEARA': 'states/CEARA.json', 
+            'MARANHAO': 'states/MARANHAO.json',
+            'PARA': 'states/PARA.json',
+            'PIAUI': 'states/PIAUI.json',
+            'RIO_DE_JANEIRO': 'states/RIO_DE_JANEIRO.json',
+            'SANTA_CATARINA': 'states/SANTA_CATARINA.json',
+            'SAO_PAULO': 'states/SAO_PAULO.json'
+          }
         };
         
         // WebSocket Relay System para retransmissão de streams

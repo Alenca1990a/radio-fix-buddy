@@ -1,0 +1,74 @@
+[
+  {
+    "id": "radioalpha913fmsc",
+    "name": "Alpha 91.3 FM",
+    "type": "radio",
+    "url": "https://radio01.zas.media/8006/stream",
+    "icon": "https://img.radios.com.br/radio/lg/radio26125_1744909313.png",
+    "city": "Florianópolis - SC",
+    "state": "SC",
+    "category": "sc",
+    "frequency": "91.3 FM",
+    "letter": "A"
+  },
+  {
+    "id": "atlantida1009fmsc",
+    "name": "Atlântida 100.9 FM",
+    "type": "radio",
+    "url": "https://27593.live.streamtheworld.com:443/ATL_FLO.mp3",
+    "icon": "https://atlantidasc.com.br/wp-content/themes/atl/assets/images/logo-atl-2.png",
+    "city": "Florianópolis - SC",
+    "state": "SC",
+    "category": "sc",
+    "frequency": "100.9 FM",
+    "letter": "A"
+  },
+  {
+    "id": "biguacu983fmsc",
+    "name": "Biguaçu 98.3 FM",
+    "type": "radio",
+    "url": "https://stream.splug.com.br:8443/Radio39",
+    "icon": "https://img.radios.com.br/radio/lg/radio21815_1746727274.jpg",
+    "city": "Biguaçu - SC",
+    "state": "SC",
+    "category": "sc",
+    "frequency": "98.3 FM",
+    "letter": "B"
+  },
+  {
+    "id": "radiocacador92.9FM",
+    "name": "Caçador 92.9 FM",
+    "type": "radio",
+    "url": "https://wz7.servidoresbrasil.com:10410/stream",
+    "icon": "https://fm929.com.br/wp-content/uploads/2025/02/logo-radio-92.jpg",
+    "city": "Caçador - SC",
+    "state": "SC",
+    "category": "sc",
+    "frequency": "92.9 FM",
+    "letter": "C"
+  },
+  {
+    "id": "capinzal1023fmsc",
+    "name": "Capinzal 102.3 FM",
+    "type": "radio",
+    "url": "https://noar.capinzalfm.com.br/capinzalfm.mp3",
+    "icon": "https://img.radios.com.br/radio/lg/radio11151_1672175830.jpg",
+    "city": "Capinzal - SC",
+    "state": "SC",
+    "category": "sc",
+    "frequency": "102.3 FM",
+    "letter": "C"
+  },
+  {
+    "id": "jovempan1019fmsc",
+    "name": "Jovem Pan 101.9 FM",
+    "type": "radio",
+    "url": "https://wz7.servidoresbrasil.com:9052/stream",
+    "icon": "https://img.radios.com.br/radio/lg/radio24808_1722588188.jpg",
+    "city": "Jaraguá do Sul - SC",
+    "state": "SC",
+    "category": "sc",
+    "frequency": "101.9 FM",
+    "letter": "J"
+  }
+]
