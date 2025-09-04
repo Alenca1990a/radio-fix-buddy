@@ -1,0 +1,40 @@
+[
+  {
+    "id": "alvoradafm94.9",
+    "name": "Alvorada FM 94.9",
+    "type": "radio",
+    "metadata": "https://backend.radiolise.com/api/v1/metadata?url=",
+    "url": "https://27383.live.streamtheworld.com:443/RADIO_ALVORADAAAC.aac",
+    "icon": "https://i.postimg.cc/Bnyrs1H3/04008017950.png",
+    "city": "Belo Horizonte",
+    "state": "MG",
+    "category": "mg",
+    "frequency": "94.9 FM",
+    "letter": "A"
+  },
+  {
+    "id": "radio_example_without_metadata",
+    "name": "Rádio Sem Metadata",
+    "type": "radio",
+    "url": "https://example.com/radio-stream.mp3",
+    "icon": "https://example.com/radio-icon.png",
+    "city": "São Paulo",
+    "state": "SP",
+    "category": "sp",
+    "frequency": "101.5 FM",
+    "letter": "R"
+  },
+  {
+    "id": "radio_with_metadata_example",
+    "name": "Rádio Com Metadata Test",
+    "type": "radio",
+    "metadata": "https://backend.radiolise.com/api/v1/metadata?url=",
+    "url": "https://streaming-url-example.com/stream",
+    "icon": "https://example.com/icon.png",
+    "city": "Rio de Janeiro",
+    "state": "RJ",
+    "category": "rj",
+    "frequency": "95.5 FM",
+    "letter": "R"
+  }
+]
