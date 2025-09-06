@@ -3361,9 +3361,41 @@
       updateSongTitle(title) {
         const songTitleElement = document.getElementById('songTitle');
         if (songTitleElement && title) {
-          songTitleElement.textContent = title;
-          console.log('Updated song title to:', title);
+          // Decode HTML entities and handle UTF-8 characters properly
+          const decodedTitle = this.decodeHtmlEntities(title);
+          songTitleElement.textContent = decodedTitle;
+          console.log('Updated song title to:', decodedTitle);
         }
+      }
+
+      decodeHtmlEntities(text) {
+        if (!text) return text;
+        
+        // Create a temporary div element to decode HTML entities
+        const textArea = document.createElement('textarea');
+        textArea.innerHTML = text;
+        let decoded = textArea.value;
+        
+        // Additional common character replacements for metadata
+        const charMap = {
+          'Ã¡': 'á', 'Ã©': 'é', 'Ã­': 'í', 'Ã³': 'ó', 'Ãº': 'ú',
+          'Ã ': 'à', 'Ã¨': 'è', 'Ã¬': 'ì', 'Ã²': 'ò', 'Ã¹': 'ù',
+          'Ã¢': 'â', 'Ãª': 'ê', 'Ã®': 'î', 'Ã´': 'ô', 'Ã»': 'û',
+          'Ã£': 'ã', 'Ãµ': 'õ', 'Ã§': 'ç', 'Ã±': 'ñ',
+          'Ã': 'Á', 'Ã‰': 'É', 'Ã': 'Í', 'Ã"': 'Ó', 'Ãš': 'Ú',
+          'Ã€': 'À', 'Ãˆ': 'È', 'ÃŒ': 'Ì', 'Ã'': 'Ò', 'Ã™': 'Ù',
+          'Ã‚': 'Â', 'ÃŠ': 'Ê', 'ÃŽ': 'Î', 'Ã"': 'Ô', 'Ã›': 'Û',
+          'Ãƒ': 'Ã', 'Ã•': 'Õ', 'Ã‡': 'Ç', 'Ã'': 'Ñ',
+          'â€™': "'", 'â€œ': '"', 'â€': '"', 'â€"': '–', 'â€"': '—',
+          'Â': ''
+        };
+        
+        // Apply character replacements
+        for (const [wrong, correct] of Object.entries(charMap)) {
+          decoded = decoded.replace(new RegExp(wrong, 'g'), correct);
+        }
+        
+        return decoded.trim();
       }
 
       stopMetadataFetching() {
